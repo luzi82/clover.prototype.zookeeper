@@ -1,3 +1,6 @@
 [submodule "dependency/FFmpeg"]
 	path = dependency/FFmpeg
 	url = git@github.com:luzi82/FFmpeg.git
+[submodule "dependency/zookeeper_screen_sample"]
+	path = dependency/zookeeper_screen_sample
+	url = git@github.com:luzi82/zookeeper_screen_recognition.git
