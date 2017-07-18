@@ -19,7 +19,7 @@
 
 ## Clone git repo recursive
 
-`git clone --recursive git@github.com:luzi82/zookeeper_screen_recognition.git`
+`git clone --recursive git@github.com:luzi82/clover.prototype.zookeeper.git`
 
 ## Init working environment
 
