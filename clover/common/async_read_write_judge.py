@@ -1,5 +1,6 @@
 import threading
 import sys
+import copy
 
 BUFFER_COUNT = 3
 
@@ -35,8 +36,8 @@ class AsyncReadWriteJudge:
         with self._lock:
             assert(self._read_lock_idx == None)
             tmp_order_idx_list = copy.copy(self._order_idx_list)
-            if self.write_lock != None:
-                tmp_order_idx_list[self.write_lock] = 0
+            if self._write_lock_idx != None:
+                tmp_order_idx_list[self._write_lock_idx] = 0
             max_order_idx = max(tmp_order_idx_list)
             idx = tmp_order_idx_list.index(max_order_idx)
             self._read_lock_idx = idx
