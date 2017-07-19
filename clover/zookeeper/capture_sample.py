@@ -1,10 +1,11 @@
-from video_input import video_capture
+from clover.video_input import video_capture
 import random
 import os
 import time
 import sys
 import cv2
 
+FFMPEG_EXEC_PATH = os.path.join('dependency','Ffmpeg','ffmpeg')
 MAIN_WIDTH = 120
 MAIN_HEIGHT = 213
 
@@ -38,7 +39,7 @@ if __name__ == '__main__':
         state_clr = classifier_state.StateClassifier(args.scm_path)
         scm_img_path = os.path.join(args.scm_img_path,str(t))
 
-    vc = video_capture.VideoCapture(args.src_name,MAIN_WIDTH,MAIN_HEIGHT)
+    vc = video_capture.VideoCapture(FFMPEG_EXEC_PATH,args.src_name,MAIN_WIDTH,MAIN_HEIGHT)
     vc.start()
     vc.wait_data_ready()
     while True:
