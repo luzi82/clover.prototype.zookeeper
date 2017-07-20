@@ -10,13 +10,13 @@ def init(bot_logic):
     bot_logic.main_menu_cooldown = 0
 
 def tick(bot_logic, img, arm, t, ret):
-    ret['main_menu_data'] = {}
-    rret = ret['main_menu_data']
-
     if t < bot_logic.main_menu_cooldown:
         return False
     if arm and (arm['is_moving']):
         return False
+
+    ret['main_menu_data'] = {}
+    rret = ret['main_menu_data']
 
     button_label, _ = bot_logic.main_menu_button_clr.predict(img)
     rret['button_label'] = button_label
@@ -32,6 +32,7 @@ def tick(bot_logic, img, arm, t, ret):
             target_xy+(1,),
             target_xy+(0,)
         ]
+        bot_logic.main_menu_cooldown = t + 1
     
     return True
 

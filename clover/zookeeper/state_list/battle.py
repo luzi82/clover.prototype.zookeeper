@@ -10,13 +10,15 @@ BOARD_RECT = (0,332,640,972) # x0,y0,x1,y1
 
 def init(bot_logic):
     bot_logic.board_animal_clr = classifier_board_animal.BoardAnimalClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_board_animal.MODEL_PATH))
+    bot_logic.battle_over = None
 
-def tick(bot_logic, img, ret):
+def tick(bot_logic, img, arm, t, ret):
+    if arm and (arm['is_moving']):
+        return False
+
     ret['battle_data'] = {}
     ret = ret['battle_data']
 
-    #if not hasattr(bot_logic, 'board_animal_clr'):
-    #    bot_logic.board_animal_clr = classifier_board_animal.BoardAnimalClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_board_animal.MODEL_PATH))
     board_animal_list, _ = bot_logic.board_animal_clr.predict(img)
     board_animal_list_list = [[board_animal_list[i+j*SIZE] for j in range(SIZE)] for i in range(SIZE)]
     ret['board_animal_list_list'] = board_animal_list_list
@@ -28,6 +30,31 @@ def tick(bot_logic, img, ret):
             move['is_best'] = move['score'] >= best_score
     ret['move_list'] = move_list
 
+    if arm:
+        arm_xy = arm['xyz'][:2]
+        if arm['xyz'][3] != 0:
+            ret['arm'] = [arm_xy+(0,)]
+        else if bot_logic.battle_over == None:
+            _best_move_list = list(filter(lambda move:move['is_best'],move_list))
+            best_move_list = []
+            for move in _best_move_list:
+                xy0 = _item_xy(move['x0'],move['y0'])
+                xy1 = _item_xy(move['x1'],move['y1'])
+        
+                m = copy.copy(move)
+                m['xy0'] = xy0
+                m['xy1'] = xy1
+                best_move_list.append(m)
+        
+                m = copy.copy(move)
+                m['xy0'] = xy1
+                m['xy1'] = xy0
+                best_move_list.append(m)
+        
+            for move in best_move_list:
+                move['dist2'] = dist2(m['xy0'],arm_xy)
+    
+        else:
 
 SCREEN_DISPLAY_X0 = 120 # hardcode
 BOARD_X0 = 0
@@ -56,3 +83,9 @@ def _item_xy(col, row):
     dy = (BOARD_RECT[3] - BOARD_RECT[1]) / SIZE
     return ((col+0.5)*dx+BOARD_RECT[0],(row+0.5)*dy+BOARD_RECT[1])
     
+def dist2(xy0,xy1):
+    assert(len(xy0)==len(xy1))
+    d = [xy0[i]-xy1[i] for i in range(len(xy0))]
+    d = [dd*dd for dd in d]
+    d = sum(d)
+    return d
