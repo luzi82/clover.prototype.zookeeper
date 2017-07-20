@@ -30,17 +30,18 @@ class Bot:
         self.vc.start()
         self.vc.wait_data_ready()
 
+        pygame.init()
         img_surf = pygame.pixelcopy.make_surface(np.zeros((VIDEO_SIZE[0],VIDEO_SIZE[1],3),dtype=np.uint8))
         screen = pygame.display.set_mode(SCREEN_SIZE)
 
-        self.logic_img_buf = [np.zeros((VIDEO_SIZE[1],VIDEO_SIZE[0],3),dtype=uint8) for _ in range(async_read_write_judge.BUFFER_COUNT)]
+        self.logic_img_buf = [np.zeros((VIDEO_SIZE[1],VIDEO_SIZE[0],3),dtype=np.uint8) for _ in range(async_read_write_judge.BUFFER_COUNT)]
         self.logic_result_buf = [None] * async_read_write_judge.BUFFER_COUNT
         self.logic_result_arwj = async_read_write_judge.AsyncReadWriteJudge(self.lock)
         self.logic = bot_logic.BotLogic()
-        self.logic_thread = thread.Thread(self.logic_run)
+        self.logic_thread = threading.Thread(target=self.logic_run)
         self.logic_thread.start()
 
-        img = np.zeros((VIDEO_SIZE[1],VIDEO_SIZE[0],3),dtype=uint8)
+        img = np.zeros((VIDEO_SIZE[1],VIDEO_SIZE[0],3),dtype=np.uint8)
 
         while self.run:
             for event in pygame.event.get():
@@ -62,12 +63,14 @@ class Bot:
             screen.blit(img_surf,(0,0))
 
             logic_read_idx = self.logic_result_arwj.get_read_idx()
-            np.copyto(img, self.logic_img_buf[logic_read_idx])
-            tmp_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            tmp_img = np.swapaxes(tmp_img,0,1)
-            pygame.pixelcopy.array_to_surface(img_surf,tmp_img)
-            screen.blit(img_surf,(120,0))
-            self.logic.draw(screen,self.logic_result_buf[logic_read_idx])
+            if self.logic_result_arwj.get_order_idx(logic_read_idx) != 0:
+                assert(self.logic_result_buf[logic_read_idx] != None)
+                np.copyto(img, self.logic_img_buf[logic_read_idx])
+                tmp_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                tmp_img = np.swapaxes(tmp_img,0,1)
+                pygame.pixelcopy.array_to_surface(img_surf,tmp_img)
+                screen.blit(img_surf,(120,0))
+                self.logic.draw(screen,self.logic_result_buf[logic_read_idx])
             self.logic_result_arwj.release_read_idx()
             
             pygame.display.flip()
@@ -77,6 +80,7 @@ class Bot:
 
     def logic_run(self):
         try:
+            self.logic.init()
             while self.run:
                 write_idx = self.logic_result_arwj.get_write_idx()
                 img = self.logic_img_buf[write_idx]

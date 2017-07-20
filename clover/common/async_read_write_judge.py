@@ -37,7 +37,7 @@ class AsyncReadWriteJudge:
             assert(self._read_lock_idx == None)
             tmp_order_idx_list = copy.copy(self._order_idx_list)
             if self._write_lock_idx != None:
-                tmp_order_idx_list[self._write_lock_idx] = 0
+                tmp_order_idx_list[self._write_lock_idx] = -1
             max_order_idx = max(tmp_order_idx_list)
             idx = tmp_order_idx_list.index(max_order_idx)
             self._read_lock_idx = idx
