@@ -2,6 +2,7 @@ import numpy as np
 import pygame
 import os
 import json
+from clover.common import draw_util
 
 from zookeeper_screen_recognition import classifier_state
 from clover.zookeeper.state_list import battle
@@ -41,19 +42,20 @@ class BotLogic:
     
     def draw(self, screen, tick_result):
         state = tick_result['state']
-        self.render_state(screen, state)
+        screen.blit(draw_util.text(state,(0,0,0)), (240,0))
+        #self.render_state(screen, state)
         if state in self.state_op_dict:
             self.state_op_dict[state].draw(screen, tick_result)
 #        if tick_result['state'] == 'battle':
 #            battle.draw(screen, tick_result)
 
-    def render_state(self, screen, state):
-        if not hasattr(self, 'state_render_dict'):
-            self.state_render_dict = {}
-        if not hasattr(self, 'state_render_font'):
-            self.state_render_font = pygame.font.SysFont("monospace", 15)
-        if not state in self.state_render_dict:
-            self.state_render_dict[state] = self.state_render_font.render(state, 1, (0,0,0))
-        screen.blit(self.state_render_dict[state], (240,0))
+#    def render_state(self, screen, state):
+#        if not hasattr(self, 'state_render_dict'):
+#            self.state_render_dict = {}
+#        if not hasattr(self, 'state_render_font'):
+#            self.state_render_font = pygame.font.SysFont("monospace", 15)
+#        if not state in self.state_render_dict:
+#            self.state_render_dict[state] = self.state_render_font.render(state, 1, (0,0,0))
+#        screen.blit(self.state_render_dict[state], (240,0))
             
             
