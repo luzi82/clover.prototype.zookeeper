@@ -6,6 +6,8 @@ import pygame
 
 SIZE = 8
 
+BOARD_RECT = (0,332,640,972) # x0,y0,x1,y1
+
 def init(bot_logic):
     bot_logic.board_animal_clr = classifier_board_animal.BoardAnimalClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_board_animal.MODEL_PATH))
 
@@ -48,3 +50,9 @@ def draw(screen, tick_result):
         y1 = (move['y1']+0.5) * CELL_SIZE + DRAW_Y0
         color = (255,0,0) if move['is_best'] else (0,0,255)
         pygame.draw.line(screen, color, (x0,y0), (x1,y1), 2)
+
+def _item_xy(col, row):
+    dx = (BOARD_RECT[2] - BOARD_RECT[0]) / SIZE
+    dy = (BOARD_RECT[3] - BOARD_RECT[1]) / SIZE
+    return ((col+0.5)*dx+BOARD_RECT[0],(row+0.5)*dy+BOARD_RECT[1])
+    

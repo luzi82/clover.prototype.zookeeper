@@ -2,6 +2,9 @@ from zookeeper_screen_recognition import classifier_main_menu_button
 from clover.common import draw_util
 import os
 
+BUTTON_XY = (166+(308/2), 174+(188/2))
+NEXT_ITEM_BUTTON_XY = (551+(60/2), 341+(54/2))
+
 def init(bot_logic):
     bot_logic.main_menu_button_clr = classifier_main_menu_button.MainMenuButtonClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_main_menu_button.MODEL_PATH))
 
