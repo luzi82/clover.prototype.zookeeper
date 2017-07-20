@@ -1,8 +1,10 @@
 import numpy as np
 import pygame
 import os
+import json
 
 from zookeeper_screen_recognition import classifier_state
+from clover.zookeeper.state_list import battle
 
 STATE_CLR_MODEL_PATH = os.path.join('dependency','zookeeper_screen_recognition','model')
 
@@ -18,13 +20,22 @@ class BotLogic:
         img = img.astype('float32')*2/255-1
         
         state, _ = self.state_clr.get_state(img)
-
-        return {
+        ret = {
             'state': state
         }
+
+        if state == 'battle':
+            battle.tick(self, img, ret)
+
+        #print(json.dumps(ret))
+
+        return ret
+
     
     def draw(self, screen, tick_result):
         self.render_state(screen, tick_result['state'])
+        if tick_result['state'] == 'battle':
+            battle.draw(screen, tick_result)
 
     def render_state(self, screen, state):
         if not hasattr(self, 'state_render_dict'):
