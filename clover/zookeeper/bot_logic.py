@@ -11,10 +11,13 @@ STATE_CLR_MODEL_PATH = os.path.join('dependency','zookeeper_screen_recognition',
 class BotLogic:
 
     def __init__(self):
-        pass
+        self.state_op_dict = {}
+        self.state_op_dict['battle'] = battle
 
     def init(self):
         self.state_clr = classifier_state.StateClassifier(STATE_CLR_MODEL_PATH)
+        for _, state_op in self.state_op_dict.items():
+            state_op.init(self)
 
     def tick(self,img):
         img = img.astype('float32')*2/255-1
@@ -24,8 +27,10 @@ class BotLogic:
             'state': state
         }
 
-        if state == 'battle':
-            battle.tick(self, img, ret)
+#        if state == 'battle':
+#            battle.tick(self, img, ret)
+        if state in self.state_op_dict:
+            self.state_op_dict[state].tick(self, img, ret)
 
         #print(json.dumps(ret))
 
@@ -33,9 +38,12 @@ class BotLogic:
 
     
     def draw(self, screen, tick_result):
-        self.render_state(screen, tick_result['state'])
-        if tick_result['state'] == 'battle':
-            battle.draw(screen, tick_result)
+        state = tick_result['state']
+        self.render_state(screen, state)
+        if state in self.state_op_dict:
+            self.state_op_dict[state].draw(screen, tick_result)
+#        if tick_result['state'] == 'battle':
+#            battle.draw(screen, tick_result)
 
     def render_state(self, screen, state):
         if not hasattr(self, 'state_render_dict'):

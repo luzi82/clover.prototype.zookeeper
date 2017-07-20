@@ -6,12 +6,16 @@ import pygame
 
 SIZE = 8
 
+def init(bot_logic):
+    if not hasattr(bot_logic, 'board_animal_clr'):
+        bot_logic.board_animal_clr = classifier_board_animal.BoardAnimalClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_board_animal.MODEL_PATH))
+
 def tick(bot_logic, img, ret):
     ret['battle_data'] = {}
     ret = ret['battle_data']
 
-    if not hasattr(bot_logic, 'board_animal_clr'):
-        bot_logic.board_animal_clr = classifier_board_animal.BoardAnimalClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_board_animal.MODEL_PATH))
+    #if not hasattr(bot_logic, 'board_animal_clr'):
+    #    bot_logic.board_animal_clr = classifier_board_animal.BoardAnimalClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_board_animal.MODEL_PATH))
     board_animal_list, _ = bot_logic.board_animal_clr.predict(img)
     board_animal_list_list = [[board_animal_list[i+j*SIZE] for j in range(SIZE)] for i in range(SIZE)]
     ret['board_animal_list_list'] = board_animal_list_list
