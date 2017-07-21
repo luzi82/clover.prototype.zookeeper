@@ -26,7 +26,7 @@ def tick(bot_logic, img, arm, t, ret):
             target_xy = BUTTON_XY
         else:
             target_xy = NEXT_ITEM_BUTTON_XY
-        ret['arm'] = [
+        ret['arm_move_list'] = [
             (arm['xyz'][:2])+(0,),
             target_xy+(0,),
             target_xy+(1,),
