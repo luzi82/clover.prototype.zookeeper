@@ -12,6 +12,8 @@ def init(bot_logic):
     bot_logic.board_animal_clr = classifier_board_animal.BoardAnimalClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_board_animal.MODEL_PATH))
 
 def tick(bot_logic, img, ret):
+    return False
+
     ret['battle_data'] = {}
     ret = ret['battle_data']
 

@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from clover.video_input import video_capture
 import os
+import time
 import threading
 import collections
 from . import bot_logic
@@ -81,16 +82,18 @@ class Bot:
     def logic_run(self):
         try:
             self.logic.init()
+            img = np.zeros((VIDEO_SIZE[1],VIDEO_SIZE[0],3),dtype=np.uint8)
             while self.run:
-                write_idx = self.logic_result_arwj.get_write_idx()
-                img = self.logic_img_buf[write_idx]
                 with self.lock:
                     tmp_img = self.vc.get_frame()
                     np.copyto(img, tmp_img)
                     self.vc.release_frame()
-                logic_result = self.logic.tick(img)
-                self.logic_result_buf[write_idx] = logic_result
-                self.logic_result_arwj.release_write_idx()
+                logic_result = self.logic.tick(img, time.time())
+                if logic_result:
+                    write_idx = self.logic_result_arwj.get_write_idx()
+                    np.copyto(self.logic_img_buf[write_idx], img)
+                    self.logic_result_buf[write_idx] = logic_result
+                    self.logic_result_arwj.release_write_idx()
         except:
             traceback.print_exc()
 

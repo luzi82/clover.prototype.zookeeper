@@ -22,7 +22,7 @@ class BotLogic:
         for _, state_op in self.state_op_dict.items():
             state_op.init(self)
 
-    def tick(self,img):
+    def tick(self,img,time_s):
         img = img.astype('float32')*2/255-1
         
         state, _ = self.state_clr.get_state(img)
@@ -32,12 +32,13 @@ class BotLogic:
 
 #        if state == 'battle':
 #            battle.tick(self, img, ret)
+        good = False
         if state in self.state_op_dict:
-            self.state_op_dict[state].tick(self, img, ret)
+            good = self.state_op_dict[state].tick(self, img, None, time_s, ret)
 
         #print(json.dumps(ret))
 
-        return ret
+        return ret if good else None
 
     
     def draw(self, screen, tick_result):

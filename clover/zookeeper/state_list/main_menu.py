@@ -32,7 +32,8 @@ def tick(bot_logic, img, arm, t, ret):
             target_xy+(1,),
             target_xy+(0,)
         ]
-    
+    bot_logic.main_menu_cooldown = t + 1
+
     return True
 
 def draw(screen, tick_result):
