@@ -11,15 +11,15 @@ def init(bot_logic):
     bot_logic.main_menu_cooldown = 0
 
 def tick(bot_logic, img, arm, t, ret):
-    ret['main_menu_data'] = {}
-    rret = ret['main_menu_data']
-
     if t < bot_logic.main_menu_cooldown:
         # print('IVRWEGUZPS t < bot_logic.main_menu_cooldown',file=sys.stderr)
         return False
     if arm and (arm['is_busy']):
         # print('PVQYDYNBCE is_busy',file=sys.stderr)
         return False
+
+    ret['main_menu_data'] = {}
+    rret = ret['main_menu_data']
 
     button_label, _ = bot_logic.main_menu_button_clr.predict(img)
     rret['button_label'] = button_label
