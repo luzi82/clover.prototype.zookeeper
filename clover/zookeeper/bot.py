@@ -7,9 +7,11 @@ import os
 import time
 import threading
 import collections
+import copy
 from . import bot_logic
 import traceback
 from clover.common import async_read_write_judge
+from clover.uarmswiftpro import uarm_screen
 
 FFMPEG_EXEC_PATH = os.path.join('dependency','FFmpeg','ffmpeg')
 
@@ -20,9 +22,9 @@ WHITE = 255,255,255
 class Bot:
 
     def __init__(self):
-        pass
+        self.uarm_screen_last_cmd = None
     
-    def main(self, src_name):
+    def main(self, src_name, uarm_calibration_filename):
         self.lock = threading.RLock()
 
         self.run = True
@@ -30,6 +32,13 @@ class Bot:
         self.vc = video_capture.VideoCapture(FFMPEG_EXEC_PATH,src_name,VIDEO_SIZE[0],VIDEO_SIZE[1])
         self.vc.start()
         self.vc.wait_data_ready()
+
+        #self.uarm_screen = None
+        self.uarm_screen = uarm_screen.UArmScreen(uarm_calibration_filename)
+        self.uarm_screen.connect()
+        self.uarm_screen.wait_ready()
+        self.uarm_screen.set_report_position(True).wait()
+        self.uarm_screen.wait_report_position_ready()
 
         pygame.init()
         img_surf = pygame.pixelcopy.make_surface(np.zeros((VIDEO_SIZE[0],VIDEO_SIZE[1],3),dtype=np.uint8))
@@ -78,6 +87,8 @@ class Bot:
     
         self.logic_thread.join()
         self.vc.close()
+        if self.uarm_screen:
+            self.uarm_screen.close()
 
     def logic_run(self):
         try:
@@ -88,21 +99,34 @@ class Bot:
                     tmp_img = self.vc.get_frame()
                     np.copyto(img, tmp_img)
                     self.vc.release_frame()
-                logic_result = self.logic.tick(img, time.time())
+                arm_data = self.get_arm_data()
+                logic_result = self.logic.tick(img, arm_data, time.time())
                 if logic_result:
                     write_idx = self.logic_result_arwj.get_write_idx()
                     np.copyto(self.logic_img_buf[write_idx], img)
                     self.logic_result_buf[write_idx] = logic_result
                     self.logic_result_arwj.release_write_idx()
+                if logic_result and 'arm' in logic_result:
+                    for pos in logic_result['arm']:
+                        self.uarm_screen_last_cmd = self.uarm_screen.set_position(pos,20000)
         except:
             traceback.print_exc()
+
+    def get_arm_data(self):
+        if self.uarm_screen == None:
+            return None
+        ret = {}
+        ret['is_busy'] = ( self.uarm_screen_last_cmd != None ) and ( self.uarm_screen_last_cmd.is_busy() )
+        ret['xyz'] = self.uarm_screen.get_last_report_position()
+        return ret
 
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='video capture')
     parser.add_argument('src_name', help='src_name')
+    parser.add_argument('uarm_calibration', help='uarm_calibration')
     args = parser.parse_args()
 
     bot = Bot()
-    bot.main(args.src_name)
+    bot.main(args.src_name, args.uarm_calibration)
