@@ -2,3 +2,4 @@ __pycache__
 *.pyc
 .project
 .DS_Store
+calibration.json

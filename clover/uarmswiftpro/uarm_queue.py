@@ -1,6 +1,8 @@
 import queue
 import threading
 import time
+import traceback
+import sys
 
 from . import uarm_async
 
@@ -11,7 +13,11 @@ SLOT_COUNT = 2
 
 class UArmQueue:
 
-    def __init__(self):
+    def __init__(self, lock=None):
+        if lock == None:
+            lock = threading.RLock()
+        
+        self.lock = lock
         self.uaa = uarm_async.UArmAsync()
         self.cmd_queue = queue.Queue()
         self.next_cmd_idx = CMD_IDX_MIN
@@ -52,14 +58,22 @@ class UArmQueue:
         }
         future = _Future(self, cmd_unit)
         cmd_unit['future'] = future
-        self.cmd_queue.put(cmd_unit)
+        with self.lock:
+            self.cmd_queue.put(cmd_unit)
         return future
 
     def _loop(self):
         try:
             unit_slot_list = [None]*SLOT_COUNT
             while(True):
-                unit = self.cmd_queue.get(block=True)
+                with self.lock:
+                    if self.cmd_queue.empty():
+                        unit = None
+                    else:
+                        unit = self.cmd_queue.get(block=False)
+                if unit == None:
+                    time.sleep(0.01)
+                    continue
                 if unit['type'] == 'close':
                     return
                 if unit['type'] == 'cmd':
@@ -74,9 +88,11 @@ class UArmQueue:
                                 break
                         if slot_id != None:
                             break
+                        print('APITYUHGFB queue busy',file=sys.stderr)
                         time.sleep(0.01)
                     unit_slot_list[slot_id] = unit
                     unit['uaa_future'] = self.uaa.send_cmd(unit['cmd'])
+                    time.sleep(0.1)
         except:
             traceback.print_exc()
 

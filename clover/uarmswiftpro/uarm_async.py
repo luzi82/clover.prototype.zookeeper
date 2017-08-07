@@ -40,11 +40,12 @@ class UArmAsync:
             cmd_future = self.cmd_future_dict[cmd_idx] = _UArmAsyncCmdFuture(self, cmd_idx)
             cmd_future.state = 'busy'
         ccmd = "#{} {}\n".format(cmd_idx,cmd)
+        print('<< {}'.format(ccmd.strip()),file=sys.stderr)
         self.uat.send_cmd(ccmd)
         return cmd_future
 
     def _on_msg(self,line):
-        print(line,file=sys.stderr)
+        print('>> {}'.format(line),file=sys.stderr)
         if line == '@5 V1':
             with self.lock:
                 self.ready = True

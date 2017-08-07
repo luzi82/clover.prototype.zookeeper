@@ -29,13 +29,13 @@ def tick(bot_logic, img, arm, t, ret):
     if not arm:
         pass
     elif button_label == 'a_practice':
-        #target_xy = BUTTON_XY
-        pass
+        target_xy = BUTTON_XY
+        #pass
     elif button_label[:2] == 'a_':
         target_xy = NEXT_ITEM_BUTTON_XY
 
     if target_xy:
-        ret['arm'] = [
+        ret['arm_move_list'] = [
             (arm['xyz'][:2])+(0,),
             target_xy+(0,),
             target_xy+(1,),
