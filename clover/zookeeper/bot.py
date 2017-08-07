@@ -24,6 +24,7 @@ class Bot:
 
     def __init__(self):
         self.uarm_screen_last_cmd = None
+        self.last_pos = None
     
     def main(self, src_name, uarm_calibration_filename):
         self.lock = threading.RLock()
@@ -110,6 +111,7 @@ class Bot:
                 if logic_result and 'arm_move_list' in logic_result:
                     for pos in logic_result['arm_move_list']:
                         self.uarm_screen_last_cmd = self.uarm_screen.set_position(pos,ARM_SPEED)
+                        self.last_pos = list(pos)
         except:
             traceback.print_exc()
 
@@ -119,6 +121,7 @@ class Bot:
         ret = {}
         ret['is_busy'] = ( self.uarm_screen_last_cmd != None ) and ( self.uarm_screen_last_cmd.is_busy() )
         ret['xyz'] = self.uarm_screen.get_last_report_position()
+        ret['last_pos'] = self.last_pos if (self.last_pos!=None) else ret['xyz']
         return ret
 
 if __name__ == '__main__':

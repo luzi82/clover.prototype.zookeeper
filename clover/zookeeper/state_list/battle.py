@@ -26,6 +26,8 @@ ARM_BOARD_PARK_XY = ((ARM_BOARD_RECT[0]+ARM_BOARD_RECT[2])/2), (ARM_BOARD_RECT[1
 ARM_CELL_STEP = 640 / SIDE_COUNT
 MOVE_LEN = 640
 
+EAT_FALL_DELAY = 0.9
+
 def init(bot_logic):
     bot_logic.board_animal_clr = classifier_board_animal.BoardAnimalClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_board_animal.MODEL_PATH))
     bot_logic.battle_second_clr = classifier_battle_second.BattleSecondClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_battle_second.MODEL_PATH))
@@ -52,12 +54,12 @@ def tick(bot_logic, img, arm, t, ret):
     if bot_logic.battle_target_move_last:
         last_move = bot_logic.battle_target_move_last
         if (last_move['type'] == 'h') or (last_move['type'] == 'v'):
-            bot_logic.cell_age[last_move['x0']][last_move['y0']] = t + 0.5
-            bot_logic.cell_age[last_move['x1']][last_move['y1']] = t + 0.5
+            bot_logic.cell_age[last_move['x0']][last_move['y0']] = t + EAT_FALL_DELAY
+            bot_logic.cell_age[last_move['x1']][last_move['y1']] = t + EAT_FALL_DELAY
             for x,y in last_move['clear_animal_list']:
-                bot_logic.cell_age[x][y] = t + 0.5
+                bot_logic.cell_age[x][y] = t + EAT_FALL_DELAY
         elif last_move['type'] == 'i':
-            bot_logic.cell_age[last_move['x0']][last_move['y0']] = t + 0.5
+            bot_logic.cell_age[last_move['x0']][last_move['y0']] = t + EAT_FALL_DELAY
         bot_logic.battle_target_move_last = None
 
     ret['battle_data'] = {}
@@ -87,11 +89,14 @@ def tick(bot_logic, img, arm, t, ret):
 
     board_animal_list, _ = bot_logic.board_animal_clr.predict(img)
     board_animal_list_list = [[board_animal_list[i+j*SIDE_COUNT] for j in range(SIDE_COUNT)] for i in range(SIDE_COUNT)]
+    age_list_list = [[False for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
     for i in range(SIDE_COUNT):
         for j in range(SIDE_COUNT):
             if bot_logic.cell_age[i][j] > t:
                 board_animal_list_list[i][j] = 'z_chao'
+                age_list_list[i][j] = True
     ret['board_animal_list_list'] = board_animal_list_list
+    ret['age_list_list'] = age_list_list
     
     _, move_list = zookeeper_solver.solve(board_animal_list_list, t>bot_logic.battle_last_s30_time+25)
     if len(move_list) > 0:
@@ -101,7 +106,7 @@ def tick(bot_logic, img, arm, t, ret):
     ret['move_list'] = move_list
 
     if arm:
-        arm_xy = np.array(arm['xyz'][:2])
+        arm_xy = np.array(arm['last_pos'][:2])
 
         #if arm['xyz'][2] > 0.5:
         #    print('{:.3f} FEUFVDWOBD arm[xyz][2] > 0.5'.format(time.time()),file=sys.stderr)
@@ -223,6 +228,7 @@ def draw(screen, tick_result):
 
     if 'board_animal_list_list' in ret:
         board_animal_list_list = ret['board_animal_list_list']
+        age_list_list = ret['age_list_list']
         for i in range(SIDE_COUNT):
             for j in range(SIDE_COUNT):
                 if board_animal_list_list[i][j] == 'z_chao':
@@ -232,8 +238,9 @@ def draw(screen, tick_result):
                     x1+=4
                     y0-=4
                     y1+=4
-                    pygame.draw.line(screen, (0,0,0), (x0,y0), (x1,y1), 2)
-                    pygame.draw.line(screen, (0,0,0), (x0,y1), (x1,y0), 2)
+                    color,line_width = ((0,0,0),4) if age_list_list[i][j] else ((31,31,31),2)
+                    pygame.draw.line(screen, color, (x0,y0), (x1,y1), line_width)
+                    pygame.draw.line(screen, color, (x0,y1), (x1,y0), line_width)
 
 def _logic2draw(x,y):
     xy = np.array([x+0.5,y+0.5])
