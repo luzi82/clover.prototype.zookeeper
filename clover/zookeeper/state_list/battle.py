@@ -221,6 +221,20 @@ def draw(screen, tick_result):
                 color = (255,0,0) if move['is_best'] else (0,0,255)
                 pygame.draw.rect(screen, color, tuple(xy00)+tuple(xy01), 1)
 
+    if 'board_animal_list_list' in ret:
+        board_animal_list_list = ret['board_animal_list_list']
+        for i in range(SIDE_COUNT):
+            for j in range(SIDE_COUNT):
+                if board_animal_list_list[i][j] == 'z_chao':
+                    xy = _logic2draw(i,j)
+                    x0,y0 = x1,y1 = xy
+                    x0-=4
+                    x1+=4
+                    y0-=4
+                    y1+=4
+                    pygame.draw.line(screen, (0,0,0), (x0,y0), (x1,y1), 2)
+                    pygame.draw.line(screen, (0,0,0), (x0,y1), (x1,y0), 2)
+
 def _logic2draw(x,y):
     xy = np.array([x+0.5,y+0.5])
     xy = xy * DRAW_CELL_STEP
