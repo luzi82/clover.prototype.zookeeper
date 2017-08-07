@@ -16,10 +16,13 @@ from clover.common import draw_util
 SIDE_COUNT = 8
 IMG_SHAPE = (bot.VIDEO_SIZE[1], bot.VIDEO_SIZE[0], 3)
 
+PHI = (1+5**0.5)/2
+
 ARM_BOARD_RECT = (0,332,640,972) # x0,y0,x1,y1
 ARM_BOARD_NE_XY = np.array([ARM_BOARD_RECT[0],ARM_BOARD_RECT[1]])
 ARM_BOARD_SW_XY = np.array([ARM_BOARD_RECT[2],ARM_BOARD_RECT[3]])
 ARM_BOARD_CENTER_XY = (ARM_BOARD_NE_XY+ARM_BOARD_SW_XY)/2
+ARM_BOARD_PARK_XY = ((ARM_BOARD_RECT[0]+ARM_BOARD_RECT[2])/2), (ARM_BOARD_RECT[1]/PHI + ARM_BOARD_RECT[3]/PHI/PHI)
 ARM_CELL_STEP = 640 / SIDE_COUNT
 MOVE_LEN = 640
 
@@ -36,6 +39,8 @@ def init(bot_logic):
     bot_logic.battle_target_move = None
     bot_logic.battle_target_move_last = None
     bot_logic.cell_age = [[0 for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
+    
+    bot_logic.battle_s30_park_timeout = 0
 
 def tick(bot_logic, img, arm, t, ret):
     if arm and (arm['is_busy']):
@@ -60,6 +65,15 @@ def tick(bot_logic, img, arm, t, ret):
     
     battle_second, _ = bot_logic.battle_second_clr.predict(img)
     ret['battle_second'] = battle_second
+
+    # park pen
+    if (battle_second == 's30') and (bot_logic.battle_s30_park_timeout < t):
+        ret_root['arm_move_list'] = [
+            ARM_BOARD_PARK_XY+(0,)
+        ]
+        bot_logic.battle_s30_park_timeout = t+30
+        return True
+
     if battle_second != 'sxx':
         #print('{:.3f} MNRPKGALAW battle non sxx'.format(time.time()))
         bot_logic.battle_target_move = None
