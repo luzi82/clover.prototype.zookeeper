@@ -9,6 +9,7 @@ def solve(board):
 
     board = copy.copy(board)
 
+    # fill z_chao over z_chao
     chao_list = []
     for x in range(SIZE):
         chao = -1
@@ -23,8 +24,9 @@ def solve(board):
 
     h_move_list = get_h_move_list(board,'h')
     v_move_list = t1(get_h_move_list(t0(board),'v'))
+    i_move_list = get_i_move_list(board)
 
-    move_list = h_move_list+v_move_list
+    move_list = h_move_list+v_move_list+i_move_list
     
     if len(move_list) <= 0:
         return None, move_list
@@ -52,7 +54,7 @@ def get_h_move_list(board,type):
                 'i0':i0,'i1':i1,
                 'x0':x,'y0':y,'x1':x+1,'y1':y,
                 'clear_animal_list':i0_clear_animal_list+i1_clear_animal_list,
-                'combo':combo,
+                'combo':combo,'is_item':0,
                 'type':type
             })
     return move_list
@@ -60,6 +62,8 @@ def get_h_move_list(board,type):
 def check_clear(board,x,y,dx,i0):
     clear_animal_list = []
     combo = 0
+    if (i0[:2]!='a_'):
+        return clear_animal_list, combo
     if (get_animal(board,x,y-1)==i0):
         clear_animal_list.append((x,y-1))
         if (get_animal(board,x,y-2)==i0):
@@ -98,6 +102,21 @@ def t1(move_list):
         ret.append(move0)
     return ret
 
+def get_i_move_list(board):
+    move_list = []
+    for x in range(SIZE):
+        for y in range(SIZE):
+            i0 = get_animal(board,x,y)
+            if (i0[:2] != 's_'):
+                continue
+            move_list.append({
+                'i0':i0,
+                'x0':x,'y0':y,
+                'combo':0,'is_item':1,
+                'type':'i'
+            })
+    return move_list
+
 def get_animal(board,x,y):
     if x < 0 or x >= SIZE:
         return None
@@ -108,17 +127,23 @@ def get_animal(board,x,y):
 def get_rank_list(move_list,chao_list):
     busy_list = [99 for _ in range(SIZE)]
     for move in move_list:
-        top_list = {}
-        deep = -1
-        for x,y in move['clear_animal_list'] + [(move['x0'],move['y0']),(move['x1'],move['y1'])]:
-            if x not in top_list:
-                top_list[x] = 999
-            top_list[x] = min(y,top_list[x])
+        if (move['type'] == 'h') or (move['type'] == 'v'):
+            top_list = {}
+            deep = -1
+            for x,y in move['clear_animal_list'] + [(move['x0'],move['y0']),(move['x1'],move['y1'])]:
+                if x not in top_list:
+                    top_list[x] = 999
+                top_list[x] = min(y,top_list[x])
+                busy_list[x] = min(y,busy_list[x])
+                chao_create = y-chao_list[x]
+                deep = max(chao_create,deep)
+            move['top_list'] = top_list
+            move['deep'] = deep
+        elif move['type'] == 'i':
+            x,y = move['x0'],move['y0']
             busy_list[x] = min(y,busy_list[x])
-            chao_create = y-chao_list[x]
-            deep = max(chao_create,deep)
-        move['top_list'] = top_list
-        move['deep'] = deep
+            move['top_list'] = { x: y }
+            move['deep'] = move['y0']-chao_list[x]
 
     for move in move_list:
         crash = 0

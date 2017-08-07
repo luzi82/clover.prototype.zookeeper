@@ -45,8 +45,11 @@ def tick(bot_logic, img, arm, t, ret):
 
     if bot_logic.battle_target_move_last:
         last_move = bot_logic.battle_target_move_last
-        bot_logic.cell_age[last_move['x0']][last_move['y0']] = t + 0.5
-        bot_logic.cell_age[last_move['x1']][last_move['y1']] = t + 0.5
+        if (last_move['type'] == 'h') or (last_move['type'] == 'v'):
+            bot_logic.cell_age[last_move['x0']][last_move['y0']] = t + 0.5
+            bot_logic.cell_age[last_move['x1']][last_move['y1']] = t + 0.5
+        elif last_move['type'] == 'i':
+            bot_logic.cell_age[last_move['x0']][last_move['y0']] = t + 0.5
         bot_logic.battle_target_move_last = None
 
     ret['battle_data'] = {}
@@ -96,18 +99,23 @@ def tick(bot_logic, img, arm, t, ret):
             _best_move_list = list(filter(lambda move:move['is_best'],move_list))
             best_move_list = []
             for move in _best_move_list:
-                xy0 = _logic2arm(move['x0'],move['y0'])
-                xy1 = _logic2arm(move['x1'],move['y1'])
-        
-                m = copy.copy(move)
-                m['xy0'] = xy0
-                m['xy1'] = xy1
-                best_move_list.append(m)
-        
-                m = copy.copy(move)
-                m['xy0'] = xy1
-                m['xy1'] = xy0
-                best_move_list.append(m)
+                if (move['type'] == 'h') or (move['type'] == 'v'):
+                    xy0 = _logic2arm(move['x0'],move['y0'])
+                    xy1 = _logic2arm(move['x1'],move['y1'])
+            
+                    m = copy.copy(move)
+                    m['xy0'] = xy0
+                    m['xy1'] = xy1
+                    best_move_list.append(m)
+            
+                    m = copy.copy(move)
+                    m['xy0'] = xy1
+                    m['xy1'] = xy0
+                    best_move_list.append(m)
+                elif move['type'] == 'i':
+                    xy0 = _logic2arm(move['x0'],move['y0'])
+                    move['xy0'] = xy0
+                    best_move_list.append(move)
         
             for move in best_move_list:
                 move['dist'] = np.linalg.norm(move['xy0']-arm_xy)
@@ -135,22 +143,27 @@ def tick(bot_logic, img, arm, t, ret):
             #_, already_arrive, _ = _move(arm_xy, my_move['xy0'])
             #assert(already_arrive)
 
-            
             same_move_list = move_list
+            same_move_list = filter(lambda m:m['type']==my_move['type'],same_move_list)
             same_move_list = filter(lambda m:m['x0']==my_move['x0'],same_move_list)
             same_move_list = filter(lambda m:m['y0']==my_move['y0'],same_move_list)
-            same_move_list = filter(lambda m:m['x1']==my_move['x1'],same_move_list)
-            same_move_list = filter(lambda m:m['y1']==my_move['y1'],same_move_list)
+            if (my_move['type'] == 'h') or (my_move['type'] == 'v'):
+                same_move_list = filter(lambda m:m['x1']==my_move['x1'],same_move_list)
+                same_move_list = filter(lambda m:m['y1']==my_move['y1'],same_move_list)
             same_move_list = list(same_move_list)
             if len(same_move_list) > 0:
-                ret_root['arm_move_list'] = [
-                    np.append(my_move['xy0'],[1]),
-                    np.append(my_move['xy1'],[1]),
-                    np.append(my_move['xy1'],[0]),
-                ]
+                if (my_move['type'] == 'h') or (my_move['type'] == 'v'):
+                    ret_root['arm_move_list'] = [
+                        np.append(my_move['xy0'],[1]),
+                        np.append(my_move['xy1'],[1]),
+                        np.append(my_move['xy1'],[0]),
+                    ]
+                elif my_move['type'] == 'i':
+                    ret_root['arm_move_list'] = [
+                        np.append(my_move['xy0'],[1]),
+                        np.append(my_move['xy0'],[0]),
+                    ]
 
-            #bot_logic.cell_age[my_move['x0']][my_move['y0']] = t + 0.5
-            #bot_logic.cell_age[my_move['x1']][my_move['y1']] = t + 0.5
             bot_logic.battle_target_move_last = bot_logic.battle_target_move
             bot_logic.battle_target_move = None
         else:
@@ -173,10 +186,17 @@ def draw(screen, tick_result):
     
     if 'move_list' in ret:
         for move in ret['move_list']:
-            xy0 = _logic2draw(move['x0'],move['y0'])
-            xy1 = _logic2draw(move['x1'],move['y1'])
-            color = (255,0,0) if move['is_best'] else (0,0,255)
-            pygame.draw.line(screen, color, tuple(xy0), tuple(xy1), 2)
+            if (move['type'] == 'h') or (move['type'] == 'v'):
+                xy0 = _logic2draw(move['x0'],move['y0'])
+                xy1 = _logic2draw(move['x1'],move['y1'])
+                color = (255,0,0) if move['is_best'] else (0,0,255)
+                pygame.draw.line(screen, color, tuple(xy0), tuple(xy1), 2)
+            elif (move['type'] == 'i'):
+                xy0 = _logic2draw(move['x0'],move['y0'])
+                xy00 = xy0[0]-2,xy0[1]-2
+                xy01 = 4,4
+                color = (255,0,0) if move['is_best'] else (0,0,255)
+                pygame.draw.rect(screen, color, tuple(xy00)+tuple(xy01), 1)
 
 def _logic2draw(x,y):
     xy = np.array([x+0.5,y+0.5])
