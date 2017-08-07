@@ -48,6 +48,8 @@ def tick(bot_logic, img, arm, t, ret):
         if (last_move['type'] == 'h') or (last_move['type'] == 'v'):
             bot_logic.cell_age[last_move['x0']][last_move['y0']] = t + 0.5
             bot_logic.cell_age[last_move['x1']][last_move['y1']] = t + 0.5
+            for x,y in last_move['clear_animal_list']:
+                bot_logic.cell_age[x][y] = t + 0.5
         elif last_move['type'] == 'i':
             bot_logic.cell_age[last_move['x0']][last_move['y0']] = t + 0.5
         bot_logic.battle_target_move_last = None
