@@ -34,6 +34,7 @@ def init(bot_logic):
 
     # var
     bot_logic.battle_target_move = None
+    bot_logic.battle_target_move_last = None
     bot_logic.cell_age = [[0 for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
 
 def tick(bot_logic, img, arm, t, ret):
@@ -41,6 +42,12 @@ def tick(bot_logic, img, arm, t, ret):
         return False
 
     #print('{:.3f} VQSRVEVBZG battle logic free'.format(time.time()))
+
+    if bot_logic.battle_target_move_last:
+        last_move = bot_logic.battle_target_move_last
+        bot_logic.cell_age[last_move['x0']][last_move['y0']] = t + 0.5
+        bot_logic.cell_age[last_move['x1']][last_move['y1']] = t + 0.5
+        bot_logic.battle_target_move_last = None
 
     ret['battle_data'] = {}
     ret_root = ret
@@ -114,7 +121,7 @@ def tick(bot_logic, img, arm, t, ret):
                 #print('ZJAKDJQCNC',file=sys.stderr)
                 bot_logic.battle_target_move = selected_move
             elif will_arrive:
-                #print('KGDDSKPDMA',file=sys.stderr)
+                print('KGDDSKPDMA',file=sys.stderr)
                 bot_logic.battle_target_move = selected_move
                 ret_root['arm_move_list'] = [np.append(tar_xy,[0])]
             else:
@@ -142,8 +149,9 @@ def tick(bot_logic, img, arm, t, ret):
                     np.append(my_move['xy1'],[0]),
                 ]
 
-            bot_logic.cell_age[my_move['x0']][my_move['y0']] = t + 0.5
-            bot_logic.cell_age[my_move['x1']][my_move['y1']] = t + 0.5
+            #bot_logic.cell_age[my_move['x0']][my_move['y0']] = t + 0.5
+            #bot_logic.cell_age[my_move['x1']][my_move['y1']] = t + 0.5
+            bot_logic.battle_target_move_last = bot_logic.battle_target_move
             bot_logic.battle_target_move = None
         else:
             #print('{:.3f} DJZOJBEWKW wtf?'.format(time.time()),file=sys.stderr)
