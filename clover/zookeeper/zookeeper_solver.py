@@ -5,7 +5,7 @@ import sys
 
 SIZE = 8
 
-def solve(board):
+def solve(board, is_end):
 
     board = copy.copy(board)
 
@@ -31,7 +31,7 @@ def solve(board):
     if len(move_list) <= 0:
         return None, move_list
 
-    rank_list = get_rank_list(move_list,chao_list)
+    rank_list = get_rank_list(move_list,chao_list,END_WEIGHT if is_end else NORMAL_WEIGHT)
     best_move_idx = rank_list.index(max(rank_list))
     
     return move_list[best_move_idx], move_list
@@ -54,7 +54,7 @@ def get_h_move_list(board,type):
                 'i0':i0,'i1':i1,
                 'x0':x,'y0':y,'x1':x+1,'y1':y,
                 'clear_animal_list':i0_clear_animal_list+i1_clear_animal_list,
-                'combo':combo,'is_item':0,
+                'combo':combo,
                 'type':type
             })
     return move_list
@@ -112,7 +112,7 @@ def get_i_move_list(board):
             move_list.append({
                 'i0':i0,
                 'x0':x,'y0':y,
-                'combo':0,'is_item':1,
+                i0:1,
                 'type':'i'
             })
     return move_list
@@ -124,7 +124,7 @@ def get_animal(board,x,y):
         return None
     return board[x][y]
 
-def get_rank_list(move_list,chao_list):
+def get_rank_list(move_list,chao_list,weight):
     busy_list = [99 for _ in range(SIZE)]
     for move in move_list:
         if (move['type'] == 'h') or (move['type'] == 'v'):
@@ -138,12 +138,12 @@ def get_rank_list(move_list,chao_list):
                 chao_create = y-chao_list[x]
                 deep = max(chao_create,deep)
             move['top_list'] = top_list
-            move['deep'] = deep
+            move['a_deep'] = deep
         elif move['type'] == 'i':
             x,y = move['x0'],move['y0']
-            busy_list[x] = min(y,busy_list[x])
+            # busy_list[x] = min(y,busy_list[x]) # item do not crash other
             move['top_list'] = { x: y }
-            move['deep'] = move['y0']-chao_list[x]
+            move['s_deep'] = move['y0']-chao_list[x]
 
     for move in move_list:
         crash = 0
@@ -154,10 +154,39 @@ def get_rank_list(move_list,chao_list):
         move['crash'] = crash
 
     for move in move_list:
-        move['score'] = move['combo'] + 10*move['deep'] - 1000*move['crash']
+        move['score'] = sum([w * if0(move,key) for key, w in weight])
 
     rank_list = [ move['score'] for move in move_list]
     return rank_list
+
+NORMAL_WEIGHT = [
+    ('combo',     1),
+    ('a_deep',    10),
+    ('s_deep',   -10),
+    ('crash',    -1000),
+    ('s_bino',   -10000),
+    ('s_boss',   -10000+100),
+    ('s_bucket', -10000+100),
+    ('s_clear',  -10000-100),
+    ('s_heart',  -10000+100)
+]
+
+END_WEIGHT = [
+    ('combo',     1),
+    ('a_deep',    10),
+    ('s_deep',   -10),
+    ('crash',    -1000),
+    ('s_bino',   -10000),
+    ('s_boss',    10000+100),
+    ('s_bucket',  10000+100),
+    ('s_clear',   10000-100),
+    ('s_heart',   10000+100)
+]
+
+def if0(d,key):
+    if key in d:
+        return d[key]
+    return 0
 
 if __name__ == '__main__':
     import argparse

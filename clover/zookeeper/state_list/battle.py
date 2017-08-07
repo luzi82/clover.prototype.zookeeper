@@ -41,6 +41,7 @@ def init(bot_logic):
     bot_logic.cell_age = [[0 for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
     
     bot_logic.battle_s30_park_timeout = 0
+    bot_logic.battle_last_s30_time = 0
 
 def tick(bot_logic, img, arm, t, ret):
     if arm and (arm['is_busy']):
@@ -74,6 +75,9 @@ def tick(bot_logic, img, arm, t, ret):
         bot_logic.battle_s30_park_timeout = t+30
         return True
 
+    if (battle_second == 's30'):
+        bot_logic.battle_last_s30_time = t
+
     if battle_second != 'sxx':
         #print('{:.3f} MNRPKGALAW battle non sxx'.format(time.time()))
         bot_logic.battle_target_move = None
@@ -89,7 +93,7 @@ def tick(bot_logic, img, arm, t, ret):
                 board_animal_list_list[i][j] = 'z_chao'
     ret['board_animal_list_list'] = board_animal_list_list
     
-    _, move_list = zookeeper_solver.solve(board_animal_list_list)
+    _, move_list = zookeeper_solver.solve(board_animal_list_list, t>bot_logic.battle_last_s30_time+25)
     if len(move_list) > 0:
         best_score = max([move['score'] for move in move_list])
         for move in move_list:
@@ -119,15 +123,18 @@ def tick(bot_logic, img, arm, t, ret):
                     xy0 = _logic2arm(move['x0'],move['y0'])
                     xy1 = _logic2arm(move['x1'],move['y1'])
             
-                    m = copy.copy(move)
-                    m['xy0'] = xy0
-                    m['xy1'] = xy1
-                    best_move_list.append(m)
+                    if move['i0'][:2] == 'a_':
+                        m = copy.copy(move)
+                        m['xy0'] = xy0
+                        m['xy1'] = xy1
+                        best_move_list.append(m)
             
-                    m = copy.copy(move)
-                    m['xy0'] = xy1
-                    m['xy1'] = xy0
-                    best_move_list.append(m)
+                    if move['i1'][:2] == 'a_':
+                        m = copy.copy(move)
+                        m['xy0'] = xy1
+                        m['xy1'] = xy0
+                        best_move_list.append(m)
+
                 elif move['type'] == 'i':
                     xy0 = _logic2arm(move['x0'],move['y0'])
                     move['xy0'] = xy0
