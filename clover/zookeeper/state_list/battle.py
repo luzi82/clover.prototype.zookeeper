@@ -5,6 +5,7 @@ import numpy as np
 import random
 import copy
 import sys
+import time
 
 from zookeeper_screen_recognition import classifier_board_animal
 from zookeeper_screen_recognition import classifier_battle_second
@@ -39,6 +40,8 @@ def tick(bot_logic, img, arm, t, ret):
     if arm and (arm['is_busy']):
         return False
 
+    #print('{:.3f} VQSRVEVBZG battle logic free'.format(time.time()))
+
     ret['battle_data'] = {}
     ret_root = ret
     ret = ret['battle_data']
@@ -46,8 +49,11 @@ def tick(bot_logic, img, arm, t, ret):
     battle_second, _ = bot_logic.battle_second_clr.predict(img)
     ret['battle_second'] = battle_second
     if battle_second != 'sxx':
+        #print('{:.3f} MNRPKGALAW battle non sxx'.format(time.time()))
         bot_logic.battle_target_move = None
         return True
+
+    #print('{:.3f} YWNYWWSISL battle logic start'.format(time.time()))
 
     board_animal_list, _ = bot_logic.board_animal_clr.predict(img)
     board_animal_list_list = [[board_animal_list[i+j*SIDE_COUNT] for j in range(SIDE_COUNT)] for i in range(SIDE_COUNT)]
@@ -67,15 +73,19 @@ def tick(bot_logic, img, arm, t, ret):
     if arm:
         arm_xy = np.array(arm['xyz'][:2])
 
-        if arm['xyz'][2] > 0.5:
-            ret['arm_move_list'] = [np.append(arm_xy,[0])]
+        #if arm['xyz'][2] > 0.5:
+        #    print('{:.3f} FEUFVDWOBD arm[xyz][2] > 0.5'.format(time.time()),file=sys.stderr)
+        #    ret_root['arm_move_list'] = [np.append(arm_xy,[0])]
 
-        elif (bot_logic.battle_target_move == None) and (len(move_list)<=0):
-            tar_xy, already_arrive, _ = _move(arm_xy, ARM_BOARD_CENTER_XY)
-            if (not already_arrive):
-                ret['arm_move_list'] = [np.append(tar_xy,[0])]
+        if (bot_logic.battle_target_move == None) and (len(move_list)<=0):
+            #print('{:.3f} DDMKUKDGPG bot_logic.battle_target_move == None'.format(time.time()),file=sys.stderr)
+            #tar_xy, already_arrive, _ = _move(arm_xy, ARM_BOARD_CENTER_XY)
+            #if (not already_arrive):
+            #    ret_root['arm_move_list'] = [np.append(tar_xy,[0])]
+            pass
 
         elif bot_logic.battle_target_move == None:
+            #print('{:.3f} MZANYUGXDN bot_logic.battle_target_move == None'.format(time.time()),file=sys.stderr)
             _best_move_list = list(filter(lambda move:move['is_best'],move_list))
             best_move_list = []
             for move in _best_move_list:
@@ -101,17 +111,18 @@ def tick(bot_logic, img, arm, t, ret):
 
             tar_xy, already_arrive, will_arrive = _move(arm_xy, selected_move['xy0'])
             if already_arrive:
-                print('ZJAKDJQCNC',file=sys.stderr)
+                #print('ZJAKDJQCNC',file=sys.stderr)
                 bot_logic.battle_target_move = selected_move
             elif will_arrive:
-                print('KGDDSKPDMA',file=sys.stderr)
+                #print('KGDDSKPDMA',file=sys.stderr)
                 bot_logic.battle_target_move = selected_move
                 ret_root['arm_move_list'] = [np.append(tar_xy,[0])]
             else:
-                print('FWRFDBXSPK',file=sys.stderr)
+                #print('FWRFDBXSPK',file=sys.stderr)
                 ret_root['arm_move_list'] = [np.append(tar_xy,[0])]
             
         elif bot_logic.battle_target_move != None:
+            #print('{:.3f} NJHLCUZTAL bot_logic.battle_target_move != None'.format(time.time()),file=sys.stderr)
             my_move = bot_logic.battle_target_move
             
             #_, already_arrive, _ = _move(arm_xy, my_move['xy0'])
@@ -134,6 +145,11 @@ def tick(bot_logic, img, arm, t, ret):
             bot_logic.cell_age[my_move['x0']][my_move['y0']] = t + 0.5
             bot_logic.cell_age[my_move['x1']][my_move['y1']] = t + 0.5
             bot_logic.battle_target_move = None
+        else:
+            #print('{:.3f} DJZOJBEWKW wtf?'.format(time.time()),file=sys.stderr)
+            pass
+
+    #print('{:.3f} LHWIGLYADK battle logic end'.format(time.time()))
 
     return True
 

@@ -3,6 +3,7 @@ import threading
 import time
 import traceback
 import sys
+from collections import deque
 
 from . import uarm_async
 
@@ -58,41 +59,31 @@ class UArmQueue:
         }
         future = _Future(self, cmd_unit)
         cmd_unit['future'] = future
-        with self.lock:
-            self.cmd_queue.put(cmd_unit)
+        self.cmd_queue.put(cmd_unit)
         return future
 
     def _loop(self):
         try:
-            unit_slot_list = [None]*SLOT_COUNT
+            busy_queue = deque()
+            next_cmd_time = 0 # uarm easy die if cmd go too fast
             while(True):
-                with self.lock:
-                    if self.cmd_queue.empty():
-                        unit = None
-                    else:
-                        unit = self.cmd_queue.get(block=False)
-                if unit == None:
-                    time.sleep(0.01)
-                    continue
+                unit = self.cmd_queue.get(block=True)
                 if unit['type'] == 'close':
                     return
                 if unit['type'] == 'cmd':
-                    while(True):
-                        slot_id = None
-                        for i in range(SLOT_COUNT):
-                            if unit_slot_list[i] == None:
-                                slot_id = i
-                                break
-                            if not unit_slot_list[i]['future'].is_busy():
-                                slot_id = i
-                                break
-                        if slot_id != None:
-                            break
-                        print('APITYUHGFB queue busy',file=sys.stderr)
-                        time.sleep(0.01)
-                    unit_slot_list[slot_id] = unit
-                    unit['uaa_future'] = self.uaa.send_cmd(unit['cmd'])
-                    time.sleep(0.1)
+                    while len(busy_queue) >= 2:
+                        wait_unit = busy_queue.popleft()
+                        wait_unit['future'].wait()
+                    busy_queue.append(unit)
+                    now_time = time.time()
+                    #printf('URTSGFSDLS now_time:{:.3f}, next_cmd_time:{:.3f}'.format(now_time,next_cmd_time),file=sys.stderr)
+                    if now_time < next_cmd_time:
+                        time.sleep(next_cmd_time-now_time)
+                        now_time = next_cmd_time
+                    with unit['future'].cond:
+                        unit['uaa_future'] = self.uaa.send_cmd(unit['cmd'])
+                        unit['future'].cond.notify_all()
+                    next_cmd_time = now_time + 0.1
         except:
             traceback.print_exc()
 
@@ -104,12 +95,11 @@ class _Future:
     def __init__(self,uq,unit):
         self.uq = uq
         self.unit = unit
+        self.cond = threading.Condition()
     
     def wait(self):
-        while True:
-            if self.unit['uaa_future'] != None:
-                break
-            time.sleep(0.01)
+        with self.cond:
+            self.cond.wait_for(lambda: self.unit['uaa_future'] != None)
         return self.unit['uaa_future'].wait()
     
     def is_busy(self):

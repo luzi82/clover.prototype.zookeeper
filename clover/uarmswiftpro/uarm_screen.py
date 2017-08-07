@@ -4,6 +4,7 @@ import sys
 
 from . import uarm
 from . import screen_arm_position
+from clover.common import async_read_write_judge
 
 class UArmScreen:
 
@@ -12,7 +13,9 @@ class UArmScreen:
             lock = threading.Lock()
 
         self._on_report_position = None
-        self.last_report_position = None
+        #self.last_report_position = None
+        self.last_report_position_slot_list = [None]*async_read_write_judge.BUFFER_COUNT
+        self.last_report_position_slot_arwj = async_read_write_judge.AsyncReadWriteJudge()
 
         self.lock = lock
         self.uarm = uarm.UArm()
@@ -38,8 +41,10 @@ class UArmScreen:
         return self.uarm.set_report_position(enable)
 
     def get_last_report_position(self):
-        with self.lock:
-            return self.last_report_position
+        idx = self.last_report_position_slot_arwj.get_read_idx()
+        ret = self.last_report_position_slot_list[idx]
+        self.last_report_position_slot_arwj.release_read_idx()
+        return ret
 
     def wait_report_position_ready(self):
         while True:
@@ -51,8 +56,9 @@ class UArmScreen:
         pos_x,pos_y = self.sap.arm_to_screen(pos[0],pos[1])
         pos_z = (pos[2]-self.sap.json['up_z'])/(self.sap.json['down_z']-self.sap.json['up_z'])
         pos = (pos_x,pos_y,pos_z)
-        with self.lock:
-            self.last_report_position = pos
+        idx = self.last_report_position_slot_arwj.get_write_idx()
+        self.last_report_position_slot_list[idx] = pos
+        self.last_report_position_slot_arwj.release_write_idx()
         if self._on_report_position:
             self._on_report_position(pos)
 

@@ -40,12 +40,12 @@ class UArmAsync:
             cmd_future = self.cmd_future_dict[cmd_idx] = _UArmAsyncCmdFuture(self, cmd_idx)
             cmd_future.state = 'busy'
         ccmd = "#{} {}\n".format(cmd_idx,cmd)
-        print('<< {}'.format(ccmd.strip()),file=sys.stderr)
+        print('<<{:.3f}: {}'.format(time.time(),ccmd.strip()),file=sys.stderr)
         self.uat.send_cmd(ccmd)
         return cmd_future
 
     def _on_msg(self,line):
-        print('>> {}'.format(line),file=sys.stderr)
+        print('>>{:.3f}: {}'.format(time.time(),line),file=sys.stderr)
         if line == '@5 V1':
             with self.lock:
                 self.ready = True
@@ -53,9 +53,11 @@ class UArmAsync:
         if m:
             cmd_idx = int(m.group(1))
             with self.lock:
-                self.cmd_future_dict[cmd_idx].state = 'done'
-                self.cmd_future_dict[cmd_idx].result = m.group(2)
-                self.cmd_future_dict.pop(cmd_idx)
+                with self.cmd_future_dict[cmd_idx].cond:
+                    self.cmd_future_dict[cmd_idx].state = 'done'
+                    self.cmd_future_dict[cmd_idx].result = m.group(2)
+                    self.cmd_future_dict[cmd_idx].cond.notify_all()
+                    self.cmd_future_dict.pop(cmd_idx)
         if self.on_msg:
             self.on_msg(line)
     
@@ -73,13 +75,12 @@ class _UArmAsyncCmdFuture:
         self.cmd_id = cmd_id
         self.state = None
         self.result = None
+        self.cond = threading.Condition()
     
     def wait(self):
-        while True:
-            with self.uarm_async.lock:
-                if self.state != 'busy':
-                    return self.result
-            time.sleep(0.01)
+        with self.cond:
+            self.cond.wait_for(lambda: not self.is_busy())
+        return self.result
 
     def is_busy(self):
         return self.state == 'busy'
