@@ -67,5 +67,5 @@ if __name__ == '__main__':
             cv2.imwrite(fn,ndata)
         vc.release_frame()
         if not args.disable_sleep:
-            time.sleep(0.2+0.8*random.random())
+            time.sleep(0.05+0.05*random.random())
     vc.close()
