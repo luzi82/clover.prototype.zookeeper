@@ -7,6 +7,7 @@ from clover.common import draw_util
 from zookeeper_screen_recognition import classifier_state
 from clover.zookeeper.state_list import battle
 from clover.zookeeper.state_list import battle_result
+from clover.zookeeper.state_list import limited_time_sale
 from clover.zookeeper.state_list import main_menu
 from clover.zookeeper.state_list import ok_dialog
 
@@ -18,6 +19,7 @@ class BotLogic:
         self.state_op_dict = {}
         self.state_op_dict['battle'] = battle
         self.state_op_dict['battle_result'] = battle_result
+        self.state_op_dict['limited_time_sale'] = limited_time_sale
         self.state_op_dict['main_menu'] = main_menu
         self.state_op_dict['ok_dialog'] = ok_dialog
 
