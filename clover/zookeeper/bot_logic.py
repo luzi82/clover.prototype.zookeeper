@@ -8,6 +8,7 @@ from zookeeper_screen_recognition import classifier_state
 from clover.zookeeper.state_list import battle
 from clover.zookeeper.state_list import battle_result
 from clover.zookeeper.state_list import main_menu
+from clover.zookeeper.state_list import ok_dialog
 
 STATE_CLR_MODEL_PATH = os.path.join('dependency','zookeeper_screen_recognition','model')
 
@@ -18,6 +19,7 @@ class BotLogic:
         self.state_op_dict['battle'] = battle
         self.state_op_dict['battle_result'] = battle_result
         self.state_op_dict['main_menu'] = main_menu
+        self.state_op_dict['ok_dialog'] = ok_dialog
 
     def init(self):
         self.state_clr = classifier_state.StateClassifier(STATE_CLR_MODEL_PATH)
