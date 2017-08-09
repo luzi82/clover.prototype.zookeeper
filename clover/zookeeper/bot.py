@@ -60,6 +60,7 @@ class Bot:
                 if event.type == pygame.QUIT:
                     self.run = False
                     break
+                self.logic.on_event(event)
     
             if not self.run: break
 
@@ -83,6 +84,8 @@ class Bot:
                 pygame.pixelcopy.array_to_surface(img_surf,tmp_img)
                 screen.blit(img_surf,(120,0))
                 self.logic.draw(screen,self.logic_result_buf[logic_read_idx])
+            else:
+                self.logic.draw(screen,None)
             self.logic_result_arwj.release_read_idx()
             
             pygame.display.flip()

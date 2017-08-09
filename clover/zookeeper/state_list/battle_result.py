@@ -1,4 +1,3 @@
-from zookeeper_screen_recognition import classifier_main_menu_button
 from clover.common import draw_util
 import os
 import sys
