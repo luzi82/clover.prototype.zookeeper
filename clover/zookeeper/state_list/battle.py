@@ -23,6 +23,7 @@ ARM_BOARD_NE_XY = np.array([ARM_BOARD_RECT[0],ARM_BOARD_RECT[1]])
 ARM_BOARD_SW_XY = np.array([ARM_BOARD_RECT[2],ARM_BOARD_RECT[3]])
 ARM_BOARD_CENTER_XY = (ARM_BOARD_NE_XY+ARM_BOARD_SW_XY)/2
 ARM_BOARD_PARK_XY = ((ARM_BOARD_RECT[0]+ARM_BOARD_RECT[2])/2), (ARM_BOARD_RECT[1]/PHI + ARM_BOARD_RECT[3]/PHI/PHI)
+ARM_BOARD_PARK0_XY = ((ARM_BOARD_RECT[0]+ARM_BOARD_RECT[2])/2), 0
 ARM_CELL_STEP = 640 / SIDE_COUNT
 MOVE_LEN = 640
 
@@ -42,6 +43,8 @@ def init(bot_logic):
     bot_logic.battle_target_move_last = None
     bot_logic.cell_age = [[0 for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
     
+    bot_logic.battle_s00_park_timeout = 0
+
     bot_logic.battle_s30_park_timeout = 0
     bot_logic.battle_last_s30_time = 0
 
@@ -70,6 +73,12 @@ def tick(bot_logic, img, arm, t, ret):
     ret['battle_second'] = battle_second
 
     # park pen
+    if (battle_second == 's00') and (bot_logic.battle_s00_park_timeout < t):
+        ret_root['arm_move_list'] = [
+            ARM_BOARD_PARK0_XY+(0,)
+        ]
+        bot_logic.battle_s00_park_timeout = t+5
+        return True
     if (battle_second == 's30') and (bot_logic.battle_s30_park_timeout < t):
         ret_root['arm_move_list'] = [
             ARM_BOARD_PARK_XY+(0,)
