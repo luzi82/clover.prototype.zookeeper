@@ -45,6 +45,8 @@ def get_h_move_list(board,type):
             if (i0 == 'z_chao') or (i1 == 'z_chao'):
                 #print('chao',fp=sys.stderr)
                 continue
+            if (i0 == i1):
+                continue
             i0_clear_animal_list, i0_combo = check_clear(board,x,y,-1,i1)
             i1_clear_animal_list, i1_combo = check_clear(board,x+1,y,+1,i0)
             combo = i0_combo+i1_combo
