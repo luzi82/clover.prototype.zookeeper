@@ -42,6 +42,10 @@ class BotLogic:
         
         self.cap_screen_timeout = 0
         self.cap_screen_output_folder = os.path.join('dependency','zookeeper_screen_recognition','raw_image',str(int(time.time()*1000)))
+        
+        self.last_ticker = None
+        
+        self.v = {}
 
     def init(self):
         self.state_clr = classifier_state.StateClassifier(STATE_CLR_MODEL_PATH)
@@ -77,13 +81,24 @@ class BotLogic:
             'play': self.play
         }
 
-        good = False
-        
+        ticker = None
         if self.play:
             if state in self.state_op_dict:
-                good = self.state_op_dict[state].tick(self, img, arm_data, time_s, ret)
+                ticker = self.state_op_dict[state]
         else:
-            good = z_pause.tick(self, img, arm_data, time_s, ret)
+            ticker = z_pause
+
+        if ticker != self.last_ticker:
+            if (self.last_ticker!= None)and(hasattr(self.last_ticker,'end')):
+                self.last_ticker.end(self,time_s)
+            if (ticker!= None)and(hasattr(ticker,'start')):
+                ticker.start(self,time_s)
+
+        good = False
+        if (ticker!= None)and(hasattr(ticker,'tick')):
+            good = ticker.tick(self, img, arm_data, time_s, ret)
+
+        self.last_ticker = ticker
 
         #print(json.dumps(ret))
 

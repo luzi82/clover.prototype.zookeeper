@@ -29,6 +29,8 @@ MOVE_LEN = 640
 
 EAT_FALL_DELAY = 0.9
 
+CELL_CHAO_SEC = 3
+
 def init(bot_logic):
     bot_logic.board_animal_clr = classifier_board_animal.BoardAnimalClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_board_animal.MODEL_PATH))
     bot_logic.battle_second_clr = classifier_battle_second.BattleSecondClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_battle_second.MODEL_PATH))
@@ -40,8 +42,9 @@ def init(bot_logic):
 
     # var
     bot_logic.battle_target_move = None
-    bot_logic.battle_target_move_last = None
+    #bot_logic.battle_target_move_last = None
     bot_logic.cell_age = [[0 for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
+    bot_logic.cell_history = [[None for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
     
     bot_logic.battle_s00_park_timeout = 0
 
@@ -49,22 +52,6 @@ def init(bot_logic):
     bot_logic.battle_last_s30_time = 0
 
 def tick(bot_logic, img, arm, t, ret):
-    if arm and (arm['is_busy']):
-        return False
-
-    #print('{:.3f} VQSRVEVBZG battle logic free'.format(time.time()))
-
-    if bot_logic.battle_target_move_last:
-        last_move = bot_logic.battle_target_move_last
-        if (last_move['type'] == 'h') or (last_move['type'] == 'v'):
-            bot_logic.cell_age[last_move['x0']][last_move['y0']] = t + EAT_FALL_DELAY
-            bot_logic.cell_age[last_move['x1']][last_move['y1']] = t + EAT_FALL_DELAY
-            for x,y in last_move['clear_animal_list']:
-                bot_logic.cell_age[x][y] = t + EAT_FALL_DELAY
-        elif last_move['type'] == 'i':
-            bot_logic.cell_age[last_move['x0']][last_move['y0']] = t + EAT_FALL_DELAY
-        bot_logic.battle_target_move_last = None
-
     ret['battle_data'] = {}
     ret_root = ret
     ret = ret['battle_data']
@@ -72,41 +59,52 @@ def tick(bot_logic, img, arm, t, ret):
     battle_second, _ = bot_logic.battle_second_clr.predict(img)
     ret['battle_second'] = battle_second
 
+    if (battle_second == 's30'):
+        bot_logic.battle_last_s30_time = t
+
     # park pen
     if (battle_second == 's00') and (bot_logic.battle_s00_park_timeout < t):
         ret_root['arm_move_list'] = [
             ARM_BOARD_PARK0_XY+(0,)
         ]
+        bot_logic.cell_history = [[None for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
+        bot_logic.cell_age = [[0 for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
         bot_logic.battle_s00_park_timeout = t+5
         return True
     if (battle_second == 's30') and (bot_logic.battle_s30_park_timeout < t):
         ret_root['arm_move_list'] = [
             ARM_BOARD_PARK_XY+(0,)
         ]
+        bot_logic.cell_history = [[None for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
+        bot_logic.cell_age = [[0 for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
         bot_logic.battle_s30_park_timeout = t+30
         return True
-
-    if (battle_second == 's30'):
-        bot_logic.battle_last_s30_time = t
 
     if battle_second != 'sxx':
         #print('{:.3f} MNRPKGALAW battle non sxx'.format(time.time()))
         bot_logic.battle_target_move = None
         return True
 
-    #print('{:.3f} YWNYWWSISL battle logic start'.format(time.time()))
-
     board_animal_list, _ = bot_logic.board_animal_clr.predict(img)
     board_animal_list_list = [[board_animal_list[i+j*SIDE_COUNT] for j in range(SIDE_COUNT)] for i in range(SIDE_COUNT)]
     age_list_list = [[False for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
     for i in range(SIDE_COUNT):
         for j in range(SIDE_COUNT):
-            if bot_logic.cell_age[i][j] > t:
+            if t > bot_logic.cell_age[i][j]: # myth reason cell may be locked
+                bot_logic.cell_history[i][j] = None
+            if bot_logic.cell_history[i][j] == None:
+                continue
+            if bot_logic.cell_history[i][j] == board_animal_list_list[i][j]:
                 board_animal_list_list[i][j] = 'z_chao'
                 age_list_list[i][j] = True
+            else:
+                bot_logic.cell_history[i][j] = None
     ret['board_animal_list_list'] = board_animal_list_list
     ret['age_list_list'] = age_list_list
-    
+
+    if arm and (arm['is_busy']):
+        return True
+
     _, move_list = zookeeper_solver.solve(board_animal_list_list, t>bot_logic.battle_last_s30_time+25)
     if len(move_list) > 0:
         best_score = max([move['score'] for move in move_list])
@@ -201,7 +199,19 @@ def tick(bot_logic, img, arm, t, ret):
                         np.append(my_move['xy0'],[0]),
                     ]
 
-            bot_logic.battle_target_move_last = bot_logic.battle_target_move
+            #bot_logic.battle_target_move_last = bot_logic.battle_target_move
+            if (my_move['type'] == 'h') or (my_move['type'] == 'v'):
+                bot_logic.cell_history[my_move['x0']][my_move['y0']] = board_animal_list_list[my_move['x0']][my_move['y0']]
+                bot_logic.cell_age    [my_move['x0']][my_move['y0']] = t+CELL_CHAO_SEC
+                bot_logic.cell_history[my_move['x1']][my_move['y1']] = board_animal_list_list[my_move['x1']][my_move['y1']]
+                bot_logic.cell_age    [my_move['x1']][my_move['y1']] = t+CELL_CHAO_SEC
+                for x,y in my_move['clear_animal_list']:
+                    bot_logic.cell_history[x][y] = board_animal_list_list[x][y]
+                    bot_logic.cell_age    [x][y] = t+CELL_CHAO_SEC
+            elif my_move['type'] == 'i':
+                bot_logic.cell_history[my_move['x0']][my_move['y0']] = board_animal_list_list[my_move['x0']][my_move['y0']]
+                bot_logic.cell_age    [my_move['x0']][my_move['y0']] = t+CELL_CHAO_SEC
+
             bot_logic.battle_target_move = None
         else:
             #print('{:.3f} DJZOJBEWKW wtf?'.format(time.time()),file=sys.stderr)
