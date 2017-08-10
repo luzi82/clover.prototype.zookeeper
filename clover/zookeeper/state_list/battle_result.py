@@ -2,7 +2,8 @@ from clover.common import draw_util
 import os
 import sys
 
-BUTTON_XY = (350+(104/2), 946+(86/2))
+#BUTTON_XY = (350+(104/2), 946+(86/2))
+BUTTON_XY = (32+(80/2), 946+(86/2))
 
 def init(bot_logic):
     bot_logic.battle_result_cooldown_0 = 0

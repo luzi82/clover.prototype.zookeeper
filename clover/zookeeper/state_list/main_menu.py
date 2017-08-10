@@ -23,12 +23,16 @@ def tick(bot_logic, img, arm, t, ret):
 
     button_label, _ = bot_logic.main_menu_button_clr.predict(img)
     rret['button_label'] = button_label
+    
+    cp, _ = bot_logic.common_cp_clr.predict(img)
+    rret['cp'] = cp
 
+    target_label = 'a_practice' if cp == 'cp0' else 'a_vs'
     target_xy = None
 
     if not arm:
         pass
-    elif button_label == 'a_practice':
+    elif button_label == target_label:
         target_xy = BUTTON_XY
         #pass
     elif button_label[:2] == 'a_':

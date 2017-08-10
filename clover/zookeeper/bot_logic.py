@@ -8,6 +8,7 @@ import cv2
 
 from clover.common import draw_util
 from zookeeper_screen_recognition import classifier_state
+import clover.zookeeper.state_list as state_common
 from clover.zookeeper.state_list import battle
 from clover.zookeeper.state_list import battle_result
 from clover.zookeeper.state_list import boss_henchman_appeared
@@ -44,6 +45,7 @@ class BotLogic:
 
     def init(self):
         self.state_clr = classifier_state.StateClassifier(STATE_CLR_MODEL_PATH)
+        state_common.init(self)
         for _, state_op in self.state_op_dict.items():
             state_op.init(self)
         z_pause.init(self)
