@@ -18,7 +18,7 @@ FFMPEG_EXEC_PATH = os.path.join('dependency','FFmpeg','ffmpeg')
 SCREEN_SIZE = 400, 255
 VIDEO_SIZE = 120, 213
 WHITE = 255,255,255
-ARM_SPEED = 20000
+ARM_SPEED = 30000
 
 class Bot:
 
@@ -41,6 +41,7 @@ class Bot:
         self.uarm_screen.wait_ready()
         self.uarm_screen.set_report_position(True).wait()
         self.uarm_screen.wait_report_position_ready()
+        self.uarm_screen.set_acceleration(300,300).wait()
 
         pygame.init()
         img_surf = pygame.pixelcopy.make_surface(np.zeros((VIDEO_SIZE[0],VIDEO_SIZE[1],3),dtype=np.uint8))

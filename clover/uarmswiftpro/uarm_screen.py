@@ -21,6 +21,8 @@ class UArmScreen:
         self.uarm = uarm.UArm()
         self.uarm.set_on_report_position(self._uarm_on_report_position)
         self.sap = screen_arm_position.ScreenArmPosition(uarm_calibration_filename)
+        
+        self.set_acceleration = self.uarm.set_acceleration
 
     def connect(self,port=None):
         self.uarm.connect(port)

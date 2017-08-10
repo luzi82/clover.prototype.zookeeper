@@ -31,6 +31,11 @@ class UArm:
         uaacf = self.uaa.send_cmd(cmd)
         return _UArmFuture(uaacf,get_position_func)
 
+    def set_acceleration(self,p,t):
+        cmd = 'M204 P{} T{}'.format(p,t)
+        uaacf = self.uaa.send_cmd(cmd)
+        return _UArmFuture(uaacf,lambda line:line=='ok')
+
     def attach_servo(self, servo_id):
         cmd = 'M2201 N{}'.format(servo_id)
         uaacf = self.uaa.send_cmd(cmd)
