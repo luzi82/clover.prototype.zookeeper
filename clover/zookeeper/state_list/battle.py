@@ -25,11 +25,12 @@ ARM_BOARD_CENTER_XY = (ARM_BOARD_NE_XY+ARM_BOARD_SW_XY)/2
 ARM_BOARD_PARK_XY = ((ARM_BOARD_RECT[0]+ARM_BOARD_RECT[2])/2), (ARM_BOARD_RECT[1]/PHI + ARM_BOARD_RECT[3]/PHI/PHI)
 ARM_BOARD_PARK0_XY = ((ARM_BOARD_RECT[0]+ARM_BOARD_RECT[2])/2), 0
 ARM_CELL_STEP = 640 / SIDE_COUNT
-MOVE_LEN = 640
+MOVE_LEN = 1280
 
 EAT_FALL_DELAY = 0.9
 
-CELL_CHAO_SEC = 3
+CELL_CHAO_SEC = 2.5
+CELL_CHANGE_WAKE_SEC = 0.5
 
 def init(bot_logic):
     bot_logic.board_animal_clr = classifier_board_animal.BoardAnimalClassifier(os.path.join('dependency','zookeeper_screen_recognition',classifier_board_animal.MODEL_PATH))
@@ -88,17 +89,24 @@ def tick(bot_logic, img, arm, t, ret):
     board_animal_list, _ = bot_logic.board_animal_clr.predict(img)
     board_animal_list_list = [[board_animal_list[i+j*SIDE_COUNT] for j in range(SIDE_COUNT)] for i in range(SIDE_COUNT)]
     age_list_list = [[False for _ in range(SIDE_COUNT)] for _ in range(SIDE_COUNT)]
+    weak_sec = t + CELL_CHANGE_WAKE_SEC
+    weak_set = set()
     for i in range(SIDE_COUNT):
         for j in range(SIDE_COUNT):
-            if t > bot_logic.cell_age[i][j]: # myth reason cell may be locked
+            if t > bot_logic.cell_age[i][j]:
                 bot_logic.cell_history[i][j] = None
             if bot_logic.cell_history[i][j] == None:
                 continue
             if bot_logic.cell_history[i][j] == board_animal_list_list[i][j]:
-                board_animal_list_list[i][j] = 'z_chao'
-                age_list_list[i][j] = True
-            else:
-                bot_logic.cell_history[i][j] = None
+                pass
+            elif bot_logic.cell_age[i][j] > weak_sec:
+                weak_set.add(bot_logic.cell_age[i][j])
+            board_animal_list_list[i][j] = 'z_chao'
+            age_list_list[i][j] = True
+    for i in range(SIDE_COUNT):
+        for j in range(SIDE_COUNT):
+            if bot_logic.cell_age[i][j] in weak_set:
+                bot_logic.cell_age[i][j] = weak_sec
     ret['board_animal_list_list'] = board_animal_list_list
     ret['age_list_list'] = age_list_list
 

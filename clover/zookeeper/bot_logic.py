@@ -9,14 +9,15 @@ import cv2
 from clover.common import draw_util
 from zookeeper_screen_recognition import classifier_state
 import clover.zookeeper.state_list as state_common
+from clover.zookeeper.state_list import _click
 from clover.zookeeper.state_list import battle
-from clover.zookeeper.state_list import battle_result
-from clover.zookeeper.state_list import boss_henchman_appeared
-from clover.zookeeper.state_list import limited_time_sale
+#from clover.zookeeper.state_list import battle_result
+#from clover.zookeeper.state_list import boss_henchman_appeared
+#from clover.zookeeper.state_list import limited_time_sale
 from clover.zookeeper.state_list import main_menu
-from clover.zookeeper.state_list import mission_boss_invasion
+#from clover.zookeeper.state_list import mission_boss_invasion
 from clover.zookeeper.state_list import ok_dialog
-from clover.zookeeper.state_list import title
+#from clover.zookeeper.state_list import title
 from clover.zookeeper.state_list import z_pause
 from . import bot
 from clover import common
@@ -29,13 +30,17 @@ class BotLogic:
     def __init__(self):
         self.state_op_dict = {}
         self.state_op_dict['battle'] = battle
-        self.state_op_dict['battle_result'] = battle_result
-        self.state_op_dict['boss_henchman_appeared'] = boss_henchman_appeared
-        self.state_op_dict['limited_time_sale'] = limited_time_sale
+        #self.state_op_dict['battle_result'] = _click.Click('battle_result',(350+(104/2), 946+(86/2)),3)
+        self.state_op_dict['battle_result'] = _click.Click('battle_result',(32+(80/2), 946+(86/2)),3)
+        self.state_op_dict['boss_henchman_appeared'] = _click.Click('boss_henchman_appeared',((40+(48/2))*640/120, (147+(18/2))*1136/213),3)
+        self.state_op_dict['full_zoo'] = _click.Click('level_up',btn_xy(104,57,12,9),3)
+        self.state_op_dict['level_up'] = _click.Click('level_up',btn_xy(320,568,0,0),3)
+        self.state_op_dict['limited_time_sale'] = _click.Click('limited_time_sale',(79+(104/2), 837+(52/2)),3)
         self.state_op_dict['main_menu'] = main_menu
-        self.state_op_dict['mission_boss_invasion'] = mission_boss_invasion
+        self.state_op_dict['mission_boss_invasion'] = _click.Click('mission_boss_invasion',((6+(17/2))*640/120, (144+(11/2))*1136/213),3)
         self.state_op_dict['ok_dialog'] = ok_dialog
-        self.state_op_dict['title'] = title
+        self.state_op_dict['power_bottle'] = _click.Click('power_bottle',btn_xy(21,124,31,14),3)
+        self.state_op_dict['title'] = _click.Click('mission_boss_invasion',(166+(308/2), 498+(106/2)),3)
 
         self.play = False
         self.cap_screen = False
@@ -61,6 +66,8 @@ class BotLogic:
                 self.play = not self.play
             if common.in_rect(pos,SCREENCAP_BTN_RECT):
                 self.cap_screen = not self.cap_screen
+        if (self.last_ticker != None) and (hasattr(self.last_ticker,'on_event')):
+            self.last_ticker.on_event(self,event)
 
     def tick(self,img,arm_data,time_s):
         if self.cap_screen:
@@ -132,6 +139,8 @@ class BotLogic:
 #            self.state_render_dict[state] = self.state_render_font.render(state, 1, (0,0,0))
 #        screen.blit(self.state_render_dict[state], (240,0))
 
+def btn_xy(x,y,w,h):
+    return ((x+(w/2))*640/120, (y+(h/2))*1136/213)
 
 BTN_SIZE = 30
 def btn_rect(idx):

@@ -39,7 +39,7 @@ def tick(bot_logic, img, arm, t, ret):
     rret['cp'] = cp
 
     target_label = 'a_practice' if cp == 'cp0' else 'a_vs'
-    target_label = 'a_practice'
+    #target_label = 'a_practice'
     target_xy = None
 
     if not arm:
