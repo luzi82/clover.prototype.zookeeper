@@ -49,6 +49,8 @@ def tick(bot_logic, img, arm, t, ret):
         #pass
     elif button_label[:2] == 'a_':
         target_xy = NEXT_ITEM_BUTTON_XY
+    else:
+        return True
 
     if t < vv['cooldown_0']:
         return True
