@@ -38,6 +38,7 @@ class BotLogic:
         self.state_op_dict['limited_time_sale'] = _click.Click('limited_time_sale',(79+(104/2), 837+(52/2)),3)
         self.state_op_dict['main_menu'] = main_menu
         self.state_op_dict['mission_boss_invasion'] = _click.Click('mission_boss_invasion',((6+(17/2))*640/120, (144+(11/2))*1136/213),3)
+        self.state_op_dict['no_cp'] = _click.Click('no_cp',btn_xy(21,120,30,13),3)
         self.state_op_dict['ok_dialog'] = ok_dialog
         self.state_op_dict['power_bottle'] = _click.Click('power_bottle',btn_xy(21,124,31,14),3)
         self.state_op_dict['title'] = _click.Click('mission_boss_invasion',(166+(308/2), 498+(106/2)),3)
